@@ -272,6 +272,7 @@ module Yast
               end
 
               Ops.set(repos, [found_at, "name"], name)
+              Ops.set(repos, [found_at, "priority"], Ops.get_integer(prod, "priority", -1))
               Pkg.SourceEditSet(repos)
             end
           end
