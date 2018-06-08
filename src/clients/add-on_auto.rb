@@ -236,55 +236,11 @@ module Yast
           end while Ops.get(@sources, [media, pth], -1) == -1 &&
             Ops.get_boolean(prod, "ask_on_error", false) == true
           Ops.set(prod, "media", Ops.get(@sources, [media, pth], -1))
-          # Adjust "name", bnc #434708
-          if srcid != nil && srcid != -1
-            repos = Pkg.SourceEditGet
 
-            found_at = -1
-            counter = -1
+          update_source(srcid, prod, media, pth)
 
-            Builtins.foreach(repos) do |one_repo|
-              counter = Ops.add(counter, 1)
-              if Ops.get_integer(one_repo, "SrcId", -1) == srcid
-                found_at = counter
-                raise Break
-              end
-            end
-
-            if found_at != -1
-              name = Ops.get_string(repos, [found_at, "name"], "")
-
-              # Possibility to set name in control file, bnc #433981
-              if Builtins.haskey(prod, "name")
-                name = Ops.get_string(prod, "name", "")
-                Builtins.y2milestone("Preferred name: %1", name)
-                # Or use the one returned by Pkg::RepositoryScan
-              else
-                repos_at_url = Pkg.RepositoryScan(Pkg.ExpandedUrl(media))
-                # [ ["Product Name", "Path" ] ]
-                Builtins.foreach(repos_at_url) do |one_repo|
-                  if Ops.get(one_repo, 1, "") == pth
-                    name = Ops.get(one_repo, 0, "")
-                    raise Break
-                  end
-                end
-                Builtins.y2milestone("Preferred name: %1", name)
-              end
-
-              Ops.set(repos, [found_at, "name"], name)
-              Ops.set(repos, [found_at, "priority"], Ops.get_integer(prod, "priority", -1))
-              Pkg.SourceEditSet(repos)
-            end
-          end
-          if Ops.get_string(prod, "product", "") != ""
-            Builtins.y2milestone(
-              "Installing product: %1",
-              Ops.get_string(prod, "product", "")
-            )
-            Pkg.ResolvableInstall(Ops.get_string(prod, "product", ""), :product)
-          else
-            Builtins.y2warning("No product to install")
-          end
+          product = prod['product'].to_s
+          install_product(product)
         end
 
         # reread agents, redraw wizard steps, etc.
@@ -323,6 +279,64 @@ module Yast
       deep_copy(@ret)
 
       # EOF
+    end
+
+    private
+
+    # Updates given add-on/repo if has valid source_id
+    #
+    # @param [Integer|Nil] source_id
+    # @param [Hash] product
+    # @param [String] media
+    # @param [String] pth
+    def update_source(source_id, product, media, pth)
+      return if [nil, -1].include?(source_id)
+
+      repos = Pkg.SourceEditGet
+      repo_idx = repos.find_index { |repo| repo['SrcId'] == source_id }
+
+      return if repo_idx.nil?
+
+      repo = repos[repo_idx]
+      repo['name'] = preferred_name_for(repo, product, media, pth)
+      repo['priority'] = product['priority'] if product.has_key?('priority')
+
+      Builtins.y2milestone("Preferred name: %1", repo['name'])
+
+      repos[repo_idx] = repo
+
+      Pkg.SourceEditSet(repos)
+    end
+
+    # Returns preferred name for add-on/repo
+    #
+    # @param [Array] repo
+    # @param [Hash] product
+    # @param [String] media
+    # @param [String] pth
+    #
+    # @return [String] preferred name for add-on/repo
+    def preferred_name_for(repo, product, media, pth)
+      return product['name'] if product.has_key?('name')
+
+      name = repo['name']
+      expanded_url = Pkg.ExpandedUrl(media)
+      repos_at_url = Pkg.RepositoryScan(expanded_url)
+
+      other_repo = repos_at_url.find { |r| r[1] == pth }
+
+      name = other_repo[0] if other_repo
+
+      name
+    end
+
+    def install_product(product)
+      if product.empty?
+        Builtins.y2warning("No product to install")
+      else
+        Builtins.y2milestone("Installing product: %1", product)
+        Pkg.ResolvableInstall(product, :product)
+      end
     end
   end
 end

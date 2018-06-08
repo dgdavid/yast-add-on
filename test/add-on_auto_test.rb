@@ -42,11 +42,52 @@ describe Yast::AddOnAutoClient do
         allow(Yast::AddOnProduct).to receive(:add_on_products).and_return(add_on_products)
       end
 
-      context "and (product) source is loaded" do
+      context "and add-on specify a product" do
         let(:add_on_products) do
           [
             {
-              "alias"       => "produc_alias",
+              "alias"       => "add_on_alias",
+              "media_url"   => "http://product.url",
+              "name"        => "updated_repo",
+              "priority"    => 20,
+              "product"     => "product_to_install",
+              "product_dir" => "/"
+            }
+          ]
+        end
+
+        it "installs the product" do
+          expect(Yast::Pkg).to receive(:ResolvableInstall).with("product_to_install", :product)
+
+          subject.main
+        end
+      end
+
+      context "and add-on NOT specify a product" do
+        let(:add_on_products) do
+          [
+            {
+              "alias"       => "add_on_alias",
+              "media_url"   => "http://product.url",
+              "name"        => "updated_repo",
+              "priority"    => 20,
+              "product_dir" => "/"
+            }
+          ]
+        end
+
+        it "installs the product" do
+          expect(Yast::Pkg).to_not receive(:ResolvableInstall)
+
+          subject.main
+        end
+      end
+
+      context "and there are add-ons loaded" do
+        let(:add_on_products) do
+          [
+            {
+              "alias"       => "addon_alias",
               "media_url"   => "http://product.url",
               "name"        => "updated_repo",
               "priority"    => 20,
