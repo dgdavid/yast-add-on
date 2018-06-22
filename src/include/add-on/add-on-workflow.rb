@@ -171,7 +171,7 @@ module Yast
       @new_addon_name = ""
 
       if src_id == nil
-        Builtins.y2error("Cannot set name, no ID!")
+        log.error("Cannot set name, no ID!")
         return
       end
 
@@ -232,7 +232,7 @@ module Yast
         elsif UI.WidgetExists(:contents)
           Builtins.y2warning("Already in base dialog!")
         else
-          Builtins.y2error("Error in packager, closing current dialog!")
+          log.error("Error in packager, closing current dialog!")
           while !UI.WidgetExists(:contents)
             log.info("Calling UI::CloseDialog")
             UI.CloseDialog
@@ -1117,7 +1117,7 @@ module Yast
 
     def ReturnCurrentlySelectedProductInfo
       if !UI.WidgetExists(Id("list_of_addons"))
-        Builtins.y2error("No such widget: %1", "list_of_addons")
+        log.error("No such widget: list_of_addons")
         return nil
       end
 
@@ -1129,7 +1129,7 @@ module Yast
       return nil if item_id == nil
 
       if !Builtins.regexpmatch(item_id, "product_")
-        Builtins.y2error("Wrong product ID '%1'", item_id)
+        log.error("Wrong product ID '#{item_id}'")
         return nil
       end
 
@@ -1203,7 +1203,7 @@ module Yast
 
           Ops.set(info.value, "URLs", urls)
         else
-          Builtins.y2error("No URLs for repo ID %1", one_repo)
+          log.error("No URLs for repo ID #{one_repo}")
         end
         if source_data != nil && Builtins.haskey(source_data, "alias")
           Ops.set(
@@ -1373,7 +1373,7 @@ module Yast
       Builtins.foreach(product_infos) do |index, product_desc|
         src_id = Ops.get_integer(product_desc, ["info", "IDs", 0], -1)
         if src_id == nil || src_id == -1
-          Builtins.y2error("Cannot get source ID from %1", product_desc)
+          log.error("Cannot get source ID from #{product_desc}")
           next
         end
         repo_data = Pkg.SourceGeneralData(src_id)
@@ -1457,7 +1457,7 @@ module Yast
     def RemoveProductWithDependencies
       pi = ReturnCurrentlySelectedProductInfo()
       if pi == nil || pi == {}
-        Builtins.y2error("Cannot remove unknown product")
+        log.error("Cannot remove unknown product")
         return nil
       end
 
@@ -1784,7 +1784,7 @@ module Yast
 
           # Everything else
         else
-          Builtins.y2error("Uknown ret: %1", userret)
+          log.error("Uknown ret: #{userret}")
         end
       end
 

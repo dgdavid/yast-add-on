@@ -16,6 +16,8 @@
 #
 module Yast
   class AddOnAutoClient < Client
+    include Yast::Logger
+
     def main
       Yast.import "Pkg"
       Yast.import "UI"
@@ -68,7 +70,7 @@ module Yast
               "Missing mandatory <media_url> value at index %d in the <add_on_products> definition.\n" \
               "Skip the invalid product definition and continue with the installation?"),
               count)
-            log.error "Missing <media_url> value in the #{count}. add-on-product definition"
+            log.error("Missing <media_url> value in the #{count}. add-on-product definition")
             return false unless Popup.ContinueCancel(error_string) # user abort
             true
           else
