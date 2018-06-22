@@ -126,7 +126,7 @@ module Yast
       }
 
       sources_before = Pkg.SourceGetCurrent(false)
-      Builtins.y2milestone("Sources before adding new one: %1", sources_before)
+      log.info("Sources before adding new one: #{sources_before}")
 
       sequence = {
         "ws_start" => "type",
@@ -151,15 +151,15 @@ module Yast
         }
       }
 
-      Builtins.y2milestone("Starting repository sequence")
+      log.info("Starting repository sequence")
       ret = Sequencer.Run(aliases, sequence)
-      log.info "Repository sequence result: #{ret}"
+      log.info("Repository sequence result: #{ret}")
 
       # activate the changes
       activate_addon_changes(sources_before) if ret == :next
 
       AddOnProduct.last_ret = ret
-      Builtins.y2milestone("MediaSelect Dialog ret: %1", ret)
+      log.info("MediaSelect Dialog ret: #{ret}")
       ret
     end
 
@@ -179,18 +179,14 @@ module Yast
 
       # no name to change to
       if @new_addon_name == nil || @new_addon_name == ""
-        Builtins.y2milestone("No special name set")
+        log.info("No special name set")
         return
       end
 
       new_addon_set = [{ "SrcId" => src_id, "name" => @new_addon_name }]
       result = Pkg.SourceEditSet(new_addon_set)
 
-      Builtins.y2milestone(
-        "Adjusting Add-On: %1 returned: %2",
-        new_addon_set,
-        result
-      )
+      log.info("Adjusting Add-On: #{new_addon_set} returned: #{result}")
 
       # do not use it next time
       SourceDialogs.SetRepoName("")
@@ -202,24 +198,21 @@ module Yast
     # @return [Symbol] for wizard sequencer
     def CatalogSelect
       sources = deep_copy(SourceManager.newSources)
-      Builtins.y2milestone("New sources: %1", sources)
+      log.info("New sources: #{sources}")
 
       if Builtins.size(sources) == 0
         # error report
         Report.Error(_("No software repository found on medium."))
-        Builtins.y2milestone("CatalogSelect Dialog ret: %1", :back)
+        log.info("CatalogSelect Dialog ret: :back")
         return :back
       end
 
       if Builtins.size(sources) == 1
         if AddOnProduct.last_ret != :next
-          Builtins.y2milestone("Deleting source %1", Ops.get(sources, 0, 0))
+          log.info("Deleting source #{Ops.get(sources, 0, 0)}")
           Pkg.SourceDelete(Ops.get(sources, 0, 0))
 
-          Builtins.y2milestone(
-            "CatalogSelect Dialog ret: %1",
-            AddOnProduct.last_ret
-          )
+          log.info("CatalogSelect Dialog ret: #{AddOnProduct.last_ret}")
           return AddOnProduct.last_ret
         end
 
@@ -241,23 +234,20 @@ module Yast
         else
           Builtins.y2error("Error in packager, closing current dialog!")
           while !UI.WidgetExists(:contents)
-            Builtins.y2milestone("Calling UI::CloseDialog")
+            log.info("Calling UI::CloseDialog")
             UI.CloseDialog
           end
         end
 
         AddOnProduct.src_id = src_id
         SourceManager.newSources = [src_id]
-        Builtins.y2milestone("Only one source available - skipping dialog")
+        log.info("Only one source available - skipping dialog")
 
-        Builtins.y2milestone(
-          "CatalogSelect Dialog ret: %1",
-          AddOnProduct.last_ret
-        )
+        log.info("CatalogSelect Dialog ret: #{AddOnProduct.last_ret}")
         return AddOnProduct.last_ret
       end
 
-      Builtins.y2milestone("Running catalog select dialog")
+      log.info("Running catalog select dialog")
       catalogs = Builtins.maplist(sources) do |src|
         data = Pkg.SourceGeneralData(src)
         # placeholder for unknown directory
@@ -321,13 +311,13 @@ module Yast
 
       if ret != :next
         Builtins.foreach(SourceManager.newSources) do |src|
-          Builtins.y2milestone("Deleting source %1", src)
+          log.info("Deleting source #{src}")
           Pkg.SourceDelete(src)
         end
       else
         Builtins.foreach(SourceManager.newSources) do |src|
           if src != selected
-            Builtins.y2milestone("Deleting unused source %1", src)
+            log.info("Deleting unused source #{src}")
             Pkg.SourceDelete(src)
           end
         end
@@ -340,10 +330,7 @@ module Yast
       end
 
       AddOnProduct.last_ret = ret
-      Builtins.y2milestone(
-        "CatalogSelect Dialog ret: %1",
-        AddOnProduct.last_ret
-      )
+      log.info("CatalogSelect Dialog ret: #{AddOnProduct.last_ret}")
       ret
     end
 
@@ -364,8 +351,7 @@ module Yast
         next unless @added_repos.include?(product["source"])
         # Product is not available (either `installed or `selected or ...)
         if product["status"] != :available
-          log.info("Skipping product #{product["name"].inspect} with status " \
-            "#{product["status"].inspect}")
+          log.info("Skipping product #{product["name"].inspect} with status #{product["status"].inspect}")
           next
         end
 
@@ -397,28 +383,20 @@ module Yast
           )
         end
       end
-      Builtins.y2milestone(
-        "Already used urls with product_dirs: %1",
-        already_used_urls
-      )
+      log.info("Already used urls with product_dirs: #{already_used_urls}")
 
       installed_products = Builtins.filter(all_products) do |p|
         Ops.get(p, "status") == :selected || Ops.get(p, "status") == :installed
       end
-      Builtins.y2milestone(
-        "Already installed/selected products: %1",
-        installed_products
-      )
+      log.info("Already installed/selected products: #{installed_products}")
       products = Builtins.filter(all_products) do |p|
         Ops.get_integer(p, "source", -1) == AddOnProduct.src_id
       end
-      Builtins.y2milestone("Products on the media: %1", products)
+      log.info("Products on the media: #{products}")
 
       # there are no product on the given url
       if Builtins.size(products) == 0
-        Builtins.y2milestone(
-          "No poduct found on the media, but anyway, using it :-)"
-        )
+        log.info("No poduct found on the media, but anyway, using it :-)")
         # Display /media.1/info.txt if such file exists
         # Display license and wait for agreement
         # FIXME the same code is below
@@ -426,13 +404,10 @@ module Yast
           AddOnProduct.src_id
         )
         if license_ret2 != true
-          Builtins.y2milestone(
-            "Removing the current source ID %1",
-            AddOnProduct.src_id
-          )
+          log.info("Removing the current source ID #{AddOnProduct.src_id}")
           Pkg.SourceDelete(AddOnProduct.src_id)
 
-          Builtins.y2milestone("ProductSelect Dialog ret: %1", :abort)
+          log.info("ProductSelect Dialog ret: :abort")
           return :abort
         end
 
@@ -464,7 +439,7 @@ module Yast
           )
         end
 
-        Builtins.y2milestone("ProductSelect Dialog ret: %1", :next)
+        log.info("ProductSelect Dialog ret: :next")
         return :next
       end
 
@@ -473,13 +448,10 @@ module Yast
       # FIXME the same code is above
       license_ret = AddOnProduct.AcceptedLicenseAndInfoFile(AddOnProduct.src_id)
       if license_ret != true
-        Builtins.y2milestone(
-          "Removing the current source ID %1",
-          AddOnProduct.src_id
-        )
+        log.info("Removing the current source ID #{AddOnProduct.src_id}")
         Pkg.SourceDelete(AddOnProduct.src_id)
 
-        Builtins.y2milestone("ProductSelect Dialog ret: %1", :abort)
+        log.info("ProductSelect Dialog ret: :abort")
         return :abort
       end
 
@@ -490,7 +462,7 @@ module Yast
         src_general_data = Pkg.SourceGeneralData(AddOnProduct.src_id)
         current_url = Ops.get_string(src_general_data, "url", "")
 
-        Builtins.y2milestone("Only one product available - skipping dialog")
+        log.info("Only one product available - skipping dialog")
         prod = Ops.get(products, 0, {})
         if !AddOnProduct.CheckProductDependencies(
             [Ops.get_string(prod, "name", "")]
@@ -502,7 +474,7 @@ module Yast
           )
           AddOnProduct.last_ret = :back
 
-          Builtins.y2milestone("ProductSelect Dialog ret: %1", :back)
+          log.info("ProductSelect Dialog ret: :back")
           return :back
         end
         # check whether the product is already available on some media - it is similar as below
@@ -513,17 +485,13 @@ module Yast
                 Ops.get_string(prod, "version", "") &&
               Ops.get_integer(p, "media", -2) !=
                 Ops.get_integer(prod, "media", -3)
-            Builtins.y2milestone(
-              "Product %1 already available on media %2",
-              p,
-              Ops.get_integer(p, "media", -1)
-            )
+            log.info("Product #{p} already available on media #{Ops.get_integer(p, "media", -1)}")
             found_source = Ops.get_integer(p, "media", -1)
             raise Break
           end
         end
         if found_source != -1
-          Builtins.y2milestone("Deleting source %1", AddOnProduct.src_id)
+          log.info("Deleting source #{AddOnProduct.src_id}")
           Pkg.SourceDelete(AddOnProduct.src_id)
           AddOnProduct.src_id = found_source
         end
@@ -565,12 +533,12 @@ module Yast
           )
         end
 
-        Builtins.y2milestone("ProductSelect Dialog ret: %1", :next)
+        log.info("ProductSelect Dialog ret: :next")
         return :next
       end
 
       # there are more than one products on the given url
-      Builtins.y2milestone("Running product selection dialog")
+      log.info("Running product selection dialog")
       ret = nil
       items = Builtins.maplist(products) do |product|
         Item(
@@ -646,7 +614,7 @@ module Yast
             all_found = all_found && product_found
           end
           if all_found
-            Builtins.y2milestone("Deleting source %1", AddOnProduct.src_id)
+            log.info("Deleting source #{AddOnProduct.src_id}")
             Pkg.SourceDelete(AddOnProduct.src_id)
             AddOnProduct.src_id = -1
           end
@@ -700,15 +668,12 @@ module Yast
       end
 
       if ret == :abort
-        Builtins.y2milestone("Deleting source %1", AddOnProduct.src_id)
+        log.info("Deleting source #{AddOnProduct.src_id}")
         Pkg.SourceDelete(AddOnProduct.src_id)
       end
 
       AddOnProduct.last_ret = ret
-      Builtins.y2milestone(
-        "ProductSelect Dialog ret: %1",
-        AddOnProduct.last_ret
-      )
+      log.info("ProductSelect Dialog ret: #{AddOnProduct.last_ret}")
       ret
     end
 
@@ -761,7 +726,7 @@ module Yast
     end
 
     def Redraw(enable_back, enable_next, enable_abort, back_button, next_button, abort_button)
-      Builtins.y2milestone("Called Redraw()")
+      log.info("Called Redraw()")
       # main screen heading
       title = _("Add-On Product Installation")
 
@@ -773,11 +738,11 @@ module Yast
           "select it and click <b>Delete</b>.</p>"
       )
 
-      Builtins.y2milestone("Current products: %1", AddOnProduct.add_on_products)
+      log.info("Current products: #{AddOnProduct.add_on_products}")
 
       index = -1
       items = Builtins.maplist(AddOnProduct.add_on_products) do |product|
-        Builtins.y2milestone("%1", product)
+        log.info(product)
         index = Ops.add(index, 1)
         data = {}
         # BNC #464162, In AytoYaST, there is no media nr. yet
@@ -857,11 +822,7 @@ module Yast
     end
 
     def RemoveSelectedAddOn(selected)
-      Builtins.y2milestone(
-        "Deleting %1 %2",
-        selected,
-        Ops.get(AddOnProduct.add_on_products, selected)
-      )
+      log.info("Deleting #{selected} #{Ops.get(AddOnProduct.add_on_products)}")
 
       # remove whole media if the product is the only one on the media
       media = Ops.get_integer(
@@ -874,7 +835,7 @@ module Yast
       end)
 
       if med_count == 1
-        Builtins.y2milestone("Deleting source %1", media)
+        log.info("Deleting source #{media}")
         Pkg.SourceDelete(media)
       end
 
@@ -931,7 +892,7 @@ module Yast
       # FATE #301928 - Saving one click
       # Bugzilla #893103 be consistent, so always when there is no add-on skip
       if no_addons
-        Builtins.y2milestone("Skipping to media_select")
+        log.info("Skipping to media_select")
         ret = :skip_to_add
       end
 
@@ -1027,7 +988,7 @@ module Yast
           ret2 = RunWizard()
           Wizard.CloseDialog
 
-          log.info "Subworkflow result: ret2: #{ret2}"
+          log.info("Subworkflow result: ret2: #{ret2}")
 
           if ret2 == :next
             # FIXME: can be these two iterations joined?
@@ -1075,15 +1036,8 @@ module Yast
         end
       end until [:next, :back, :abort].include?(ret)
 
-      Builtins.y2milestone(
-        "Ret: %1, Some Add-on Added/Removed: %2",
-        ret,
-        some_addon_changed
-      )
-      Builtins.y2milestone(
-        "Registration will be requested: %1",
-        AddOnProduct.ProcessRegistration
-      )
+      log.info("Ret: #{ret}, Some Add-on Added/Removed: #{some_addon_changed}")
+      log.info("Registration will be requested: #{AddOnProduct.ProcessRegistration}")
 
       # First stage installation, #247892
       # installation, update or autoinstallation
@@ -1094,7 +1048,7 @@ module Yast
 
       # bugzilla #293428
       # Release all sources after all Add-Ons are added and merged
-      Builtins.y2milestone("Releasing all sources...")
+      log.info("Releasing all sources...")
       Pkg.SourceReleaseAll
 
       # bugzilla #305788
@@ -1108,7 +1062,7 @@ module Yast
     # AddOnsOverviewDialog -->
 
     def CreateAddOnsOverviewDialog
-      Builtins.y2milestone("Creating OverviewDialog")
+      log.info("Creating OverviewDialog")
 
       Wizard.SetContents(
         # TRANSLATORS: dialog caption
@@ -1351,7 +1305,7 @@ module Yast
         # only add-on products should be listed
         if Builtins.haskey(one_product, "type") &&
             Ops.get_string(one_product, "type", "addon") != "addon"
-          Builtins.y2milestone(
+          log.info(
             "Skipping product: %1",
             Ops.get_string(
               one_product,
@@ -1362,11 +1316,7 @@ module Yast
           next
         end
         counter = Ops.add(counter, 1)
-        Builtins.y2milestone(
-          "Product: %1, Info: %2",
-          one_product,
-          repository_info
-        )
+        log.info("Product: #{one_product}, Info: #{repository_info}")
         if repository_info == nil
           Builtins.y2warning(
             "No matching repository found for product listed above"
@@ -1459,7 +1409,7 @@ module Yast
         )
       end
 
-      Builtins.y2milestone("Add-Ons read: %1", AddOnProduct.add_on_products)
+      log.info("Add-Ons read: #{AddOnProduct.add_on_products}")
 
       true
     end
@@ -1484,7 +1434,7 @@ module Yast
 
     def RunPackageSelector
       solve_ret = Pkg.PkgSolve(false)
-      Builtins.y2milestone("Calling Solve() returned: %1", solve_ret)
+      log.info("Calling Solve() returned: #{solve_ret}")
 
       result = PackagesUI.RunPackageSelector({ "mode" => :summaryMode })
 
@@ -1492,9 +1442,9 @@ module Yast
 
       Wizard.OpenNextBackDialog
 
-      Builtins.y2milestone("Calling inst_rpmcopy")
+      log.info("Calling inst_rpmcopy")
       WFM.call("inst_rpmcopy")
-      Builtins.y2milestone("Done")
+      log.info("Done")
 
       Wizard.CloseDialog
 
@@ -1532,7 +1482,7 @@ module Yast
           Label.CancelButton,
           :focus_no
         )
-        Builtins.y2milestone("Deleting '%1' canceled", product_name)
+        log.info("Deleting '#{product_name}' canceled")
         return nil
       end
 
@@ -1581,40 +1531,30 @@ module Yast
         Builtins.contains(installed_packages, package_string)
       end
 
-      Builtins.y2milestone(
-        "%1 packages installed from repository",
-        Builtins.size(packages_from_repo)
-      )
+      log.info("#{Builtins.size(packages_from_repo)} packages installed from repository")
 
       # Removing selected product, whatever it means
       # It might remove several products when they use the same name
       if (Ops.get_symbol(pi, ["product", "status"], :unknown) == :installed ||
           Ops.get_symbol(pi, ["product", "status"], :unknown) == :selected) &&
           Ops.get_string(pi, ["product", "name"], "") != ""
-        Builtins.y2milestone(
-          "Removing product: '%1'",
-          Ops.get_string(pi, ["product", "name"], "")
-        )
+        log.info("Removing product: '#{Ops.get_string(pi, ["product", "name"], "")}'")
         Pkg.ResolvableRemove(
           Ops.get_string(pi, ["product", "name"], ""),
           :product
         )
       else
-        Builtins.y2milestone("Product is neither `installed nor `selected")
+        log.info("Product is neither `installed nor `selected")
       end
 
       # Removing repositories of the selected product
-      Builtins.y2milestone(
-        "Removing repositories: %1, url(s): %2",
-        src_ids,
-        Ops.get_list(pi, ["info", "URLs"], [])
-      )
+      log.info("Removing repositories: #{src_ids}, url(s): #{Ops.get_list(pi, ["info", "URLs"], [])}")
       Builtins.foreach(src_ids) do |src_id|
         if Ops.greater_than(src_id, -1)
-          Builtins.y2milestone("Removing repository ID: %1", src_id)
+          log.info("Removing repository ID: #{src_id}")
           Pkg.SourceDelete(src_id)
         else
-          Builtins.y2milestone("Product doesn't have any repository in use")
+          log.info("Product doesn't have any repository in use")
         end
       end
 
@@ -1630,10 +1570,7 @@ module Yast
       end
 
       available_package_names = Pkg.GetPackages(:available, true)
-      Builtins.y2milestone(
-        "%1 available packages",
-        Builtins.size(available_package_names)
-      )
+      log.info("#{Builtins.size(available_package_names)} available packages")
 
       status_changed = false
 
@@ -1651,7 +1588,7 @@ module Yast
           status_changed = true
 
           # it must be removed
-          Builtins.y2milestone("Removing: %1", package_string)
+          log.info("Removing: #{package_string}")
           Pkg.ResolvableRemove(
             Ops.get_string(one_package, "name", "~~~"),
             :package
@@ -1662,10 +1599,7 @@ module Yast
               available_package_names,
               Ops.get_string(one_package, "name", "~~~")
             )
-            Builtins.y2milestone(
-              "Installing another version of %1",
-              Ops.get_string(one_package, "name", "")
-            )
+            log.info("Installing another version of #{Ops.get_string(one_package, "name", "")}")
             Pkg.ResolvableInstall(
               Ops.get_string(one_package, "name", ""),
               :package
@@ -1737,7 +1671,7 @@ module Yast
     # libzypp resolvables to their inital states
     def NeutralizeAllResolvables
       Builtins.foreach([:product, :patch, :package, :srcpackage, :pattern]) do |one_type|
-        Builtins.y2milestone("Neutralizing all: %1", one_type)
+        log.info("Neutralizing all: #{one_type}")
         Pkg.ResolvableNeutral("", one_type, true)
       end
 
@@ -1747,7 +1681,7 @@ module Yast
     # Either there are no repositories now or they
     # were changed, neutralized, etc.
     def LoadLibzyppNow
-      Builtins.y2milestone("Reloading libzypp")
+      log.info("Reloading libzypp")
       SetWizardWindowInProgress()
 
       # Reinitialize
@@ -1759,7 +1693,7 @@ module Yast
     end
 
     def RunAddOnsOverviewDialog
-      Builtins.y2milestone("Overview Dialog")
+      log.info("Overview Dialog")
       ret = :next
 
       # to see which products are installed
@@ -1781,13 +1715,13 @@ module Yast
 
           # Closing
         elsif userret == :next || userret == :finish
-          Builtins.y2milestone("Finishing...")
+          log.info("Finishing...")
           ret = :next
           break
 
           # Addin new product
         elsif userret == :add
-          Builtins.y2milestone("Using new Add-On...")
+          log.info("Using new Add-On...")
 
           RunAddProductWorkflow() if RunWizard() == :next
 
@@ -1803,23 +1737,21 @@ module Yast
 
           # Removing product
         elsif userret == :delete
-          Builtins.y2milestone("Removing selected product...")
+          log.info("Removing selected product...")
 
           rpwd = RemoveProductWithDependencies()
-          Builtins.y2milestone("RPWD result was: %1", rpwd)
+          log.info("RPWD result was: #{rpwd}")
 
           # nil == user decided not to remove the product
           if rpwd == nil
-            Builtins.y2milestone(
-              "User decided not to remove the selected product"
-            )
+            log.info("User decided not to remove the selected product")
             next
 
             # false == user decided not confirm the add-on removal
             # libzypp has been already changed
             # BNC #476417: Getting libzypp to the previous state
           elsif rpwd == false
-            Builtins.y2milestone("User aborted the package manager")
+            log.info("User aborted the package manager")
 
             SetWizardWindowInProgress()
 
@@ -1844,7 +1776,7 @@ module Yast
 
           # Calling packager directly
         elsif userret == :packager
-          Builtins.y2milestone("Calling packager...")
+          log.info("Calling packager...")
           RunPackageSelector()
 
           CreateAddOnsOverviewDialog()
@@ -1863,7 +1795,7 @@ module Yast
 
     def activate_addon_changes(sources_before)
       sources_after = Pkg.SourceGetCurrent(false)
-      Builtins.y2milestone("Sources with new one added: %1", sources_after)
+      log.info("Sources with new one added: #{sources_after}")
 
       # collect the newly added repositories
       @added_repos = []
@@ -1897,7 +1829,7 @@ module Yast
       # It may happen that the add-on control file contains some code that
       # would drop the changes made, so it's better to save the soruces now
       if Mode.normal
-        Builtins.y2milestone("Saving all sources")
+        log.info("Saving all sources")
         Pkg.SourceSaveAll
       end
     end

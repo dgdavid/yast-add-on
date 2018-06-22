@@ -46,6 +46,8 @@
 # See also BNC #469320
 module Yast
   class InstAddOnSoftwareClient < Client
+    include Yast::Logger
+
     def main
       Yast.import "Pkg"
       Yast.import "Kernel"
@@ -58,7 +60,7 @@ module Yast
       return :auto if GetInstArgs.going_back
 
       @argmap = GetInstArgs.argmap
-      Builtins.y2milestone("Client called with args: %1", @argmap)
+      log.info("Client called with args: #{@argmap}")
 
       # Mapping of modes
       # module->arguments->sw_mode : UI_mode
@@ -75,16 +77,12 @@ module Yast
 
       @pcg_mode = Ops.get_string(@argmap, "sw_mode", "patterns")
       @run_in_mode = Ops.get(@modes, @pcg_mode, :summaryMode)
-      Builtins.y2milestone(
-        "Running package selector in mode %1/%2",
-        @pcg_mode,
-        @run_in_mode
-      )
+      log.info("Running package selector in mode #{@pcg_mode}/#{@run_in_mode}")
 
       # Call the package selector
       # Since yast2 >= 2.17.58
       @ret = PackagesUI.RunPackageSelector({ "mode" => @run_in_mode })
-      Builtins.y2milestone("RunPackageSelector returned %1", @ret)
+      log.info("RunPackageSelector returned #{@ret}")
 
       @dialog_ret = :next
 
@@ -93,7 +91,7 @@ module Yast
       if @ret == :accept || @ret == :ok
         # Add-on requires packages to be installed right now
         if Ops.get_boolean(@argmap, "skip_installation", false) != true
-          Builtins.y2milestone("Selected resolvables will be installed now")
+          log.info("Selected resolvables will be installed now")
 
           if WFM.CallFunction(
               "inst_rpmcopy",
@@ -102,7 +100,7 @@ module Yast
             @dialog_ret = :abort
           else
             Kernel.InformAboutKernelChange
-            Builtins.y2milestone("Done")
+            log.info("Done")
           end
         end
       end

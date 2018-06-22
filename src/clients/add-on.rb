@@ -7,6 +7,8 @@
 #
 module Yast
   class AddOnClient < Client
+    include Yast::Logger
+
     def main
       Yast.import "Pkg"
       Yast.import "UI"
@@ -27,7 +29,7 @@ module Yast
       Yast.include self, "add-on/add-on-workflow.rb"
 
       @wfm_args = WFM.Args
-      Builtins.y2milestone("ARGS: %1", @wfm_args)
+      log.info("ARGS: #{@wfm_args}")
 
       @commands = CommandLine.Parse(@wfm_args)
       Builtins.y2debug("Commands: %1", @commands)
@@ -93,7 +95,7 @@ module Yast
             @exportmap,
             Ops.get_string(@commands, ["options", "xmlfile"], "")
           )
-          Builtins.y2milestone("exported XML map: %1", @exportmap)
+          log.info("exported XML map: #{@exportmap}")
           return :auto
         end
       end
@@ -142,16 +144,14 @@ module Yast
       Wizard.EnableNextButton
 
       if Builtins.size(WFM.Args) == 0
-        Builtins.y2milestone(
-          "Url not specified in cmdline, starting full-featured module"
-        )
+        log.info("Url not specified in cmdline, starting full-featured module")
         @ret = RunAddOnsOverviewDialog()
       else
         @url = Convert.to_string(WFM.Args(0))
-        Builtins.y2milestone("Specified URL %1", @url)
+        log.info("Specified URL #{@url}")
         begin
           @createResult = SourceManager.createSource(@url)
-          Builtins.y2milestone("Source creating result: %1", @createResult)
+          log.info("Source creating result: #{@createResult}")
         end while @createResult == :again
         AddOnProduct.last_ret = :next
         @ret = RunAutorunWizard()
@@ -165,7 +165,7 @@ module Yast
       Pkg.SourceReleaseAll
 
       UI.CloseDialog
-      @ret 
+      @ret
 
       # EOF
     end

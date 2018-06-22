@@ -39,7 +39,7 @@ module Yast
       Yast.include self, "packager/repositories_include.rb"
 
       if AddOnProduct.skip_add_ons
-        Builtins.y2milestone("Skipping add-ons (as requested before)")
+        log.info("Skipping add-ons (as requested before)")
         return :auto
       end
 
@@ -72,7 +72,7 @@ module Yast
           plaindir, download, name, alias_ = false, true, "", ""
           missing_addons.each do |url|
             sources_before = Pkg.SourceGetCurrent(false)
-            Builtins.y2milestone("Sources before adding new one: %1", sources_before)
+            log.info("Sources before adding new one: #{sources_before}")
 
             next if instsys_dvd?(url) && !AddOnProduct.AskForCD(url, name)
             createSourceImpl(url, plaindir, download, name, alias_)
@@ -146,7 +146,7 @@ module Yast
         if network_needed
           # check and setup network
           ret = Convert.to_symbol(WFM.CallFunction("inst_network_check", []))
-          Builtins.y2milestone("inst_network_check ret: %1", ret)
+          log.info("inst_network_check ret: #{ret}")
 
           return ret if Builtins.contains([:back, :abort], ret)
         end

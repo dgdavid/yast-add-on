@@ -8,6 +8,8 @@
 # $Id$
 module Yast
   class VendorClient < Client
+    include Yast::Logger
+
     def main
       Yast.import "Pkg"
       Yast.import "UI"
@@ -27,7 +29,7 @@ module Yast
       if Builtins.size(GetInstArgs.argmap) == 0 &&
           Ops.greater_than(Builtins.size(WFM.Args), 0)
         Mode.SetUI("commandline")
-        Builtins.y2milestone("Mode CommandLine not supported, exiting...")
+        log.info("Mode CommandLine not supported, exiting...")
         # TRANSLATORS: error message - the module does not provide command line interface
         CommandLine.Print(
           _("There is no user interface available for this module.")
@@ -111,7 +113,7 @@ module Yast
         @version = Ops.get_string(@product, "version", "")
         @version = Ops.get(Builtins.splitstring(@version, "-"), 0, "") # split off release
 
-        Builtins.y2milestone("Trying %1", @cdpath)
+        log.info("Trying #{@cdpath}")
         @dirlist2 = Convert.to_list(SCR.Read(path(".target.dir"), @cdpath))
 
         if Ops.less_or_equal(Builtins.size(@dirlist2), 0) ||
@@ -125,7 +127,7 @@ module Yast
 
         @cdpath = Ops.add(@cdpath, "/linux")
 
-        Builtins.y2milestone("Trying %1", @cdpath)
+        log.info("Trying #{@cdpath}")
 
         @dirlist2 = Convert.to_list(SCR.Read(path(".target.dir"), @cdpath))
         if Ops.less_or_equal(Builtins.size(@dirlist2), 0) ||
@@ -155,7 +157,7 @@ module Yast
       end
 
 
-      Builtins.y2milestone("Trying %1", @cdpath)
+      log.info("Trying #{@cdpath}")
 
       @dirlist = Convert.convert(
         SCR.Read(path(".target.dir"), @cdpath),
@@ -172,7 +174,7 @@ module Yast
         )
       end
 
-      Builtins.y2milestone("found %1", @dirlist)
+      log.info("found #{@dirlist}")
 
       # filter files ending in .inst (allow .ins for dos :-})
 
@@ -185,7 +187,7 @@ module Yast
         end
       end
 
-      Builtins.y2milestone("inst %1", @instlist)
+      log.info("inst #{@instlist}")
 
       if Ops.less_or_equal(Builtins.size(@dirlist), 0)
         # VENDOR: vendor cd contains wrong data
@@ -291,7 +293,7 @@ module Yast
       SCR.Execute(path(".target.umount"), Installation.sourcedir)
 
       UI.CloseDialog
-      :ok 
+      :ok
 
       # EOF
     end
@@ -312,7 +314,7 @@ module Yast
     # return 0 on success
 
     def run_inst(fpath, fname)
-      Builtins.y2milestone("run_inst %1/%2", fpath, fname)
+      log.info("run_inst #{fpath}/#{fname}")
 
       tmpdir = Convert.to_string(SCR.Read(path(".target.tmpdir")))
       SCR.Execute(

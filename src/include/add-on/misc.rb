@@ -15,6 +15,8 @@
 #
 module Yast
   module AddOnMiscInclude
+    include Yast::Logger
+
     def initialize_add_on_misc(include_target)
 
       textdomain "add-on"
@@ -32,23 +34,18 @@ module Yast
       enough_memory = 373000
 
       meminfo = Convert.to_map(SCR.Read(path(".proc.meminfo")))
-      totalmem = Ops.add(
-        Ops.get_integer(meminfo, "memtotal", 0),
-        Ops.get_integer(meminfo, "swaptotal", 0)
-      )
 
-      Builtins.y2milestone(
-        "Memory: %1, Swap: %2, Total: %3",
-        Ops.get_integer(meminfo, "memtotal", 0),
-        Ops.get_integer(meminfo, "swaptotal", 0),
-        totalmem
-      )
+      memtotal = Ops.get_integer(meminfo, "memtotal", 0)
+      swaptotal = Ops.get_integer(meminfo, "swaptotal", 0)
+      totalmem = Ops.add(memtotal, swaptotal)
+
+      log.info("Memory: #{memtotal}, Swap: #{swaptotal}, Total: #{totalmem}")
 
       # something is wrong
       if totalmem == nil
         # using only RAM if possible
         if Ops.get(meminfo, "memtotal") != nil
-          totalmem = Ops.get_integer(meminfo, "memtotal", 0) 
+          totalmem = Ops.get_integer(meminfo, "memtotal", 0)
           # can't do anything, just assume we enough
         else
           totalmem = enough_memory
@@ -79,7 +76,7 @@ module Yast
                 "Do you want to skip using add-on products?"
             )
           )
-          Builtins.y2milestone("User decided to skip Add-Ons")
+          log.info("User decided to skip Add-Ons")
           AddOnProduct.skip_add_ons = true
 
           return false
