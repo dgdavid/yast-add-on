@@ -32,7 +32,7 @@ module Yast
       log.info("ARGS: #{@wfm_args}")
 
       @commands = CommandLine.Parse(@wfm_args)
-      Builtins.y2debug("Commands: %1", @commands)
+      log.debug("Commands: #{@commands}")
 
       # bnc #430852
       if Ops.get_string(@commands, "command", "") == "help" ||

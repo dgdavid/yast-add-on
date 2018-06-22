@@ -113,10 +113,10 @@ module Yast
           # if not set it will use the default (the code actually runs
           # SourceDialogs.SetURL(SourceDialogs.GetURL) internally)
           ret = TypeDialogOpts(true, SourceDialogs.GetURL)
-          log.debug "SourceDialogs.addon_enabled: #{SourceDialogs.addon_enabled}"
+          log.debug("SourceDialogs.addon_enabled: #{SourceDialogs.addon_enabled}")
           # explicitly check for false (nil means the checkbox was not displayed)
           ret = :skip if ret == :next && SourceDialogs.addon_enabled == false
-          log.debug "TypeDialog result: #{ret}"
+          log.debug("TypeDialog result: #{ret}")
           ret
         end,
         "edit"  => lambda { EditDialog() },
