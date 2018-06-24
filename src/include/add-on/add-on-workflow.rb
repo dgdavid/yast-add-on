@@ -230,7 +230,7 @@ module Yast
         if UI.WidgetExists(:add_on_popup_id)
           UI.CloseDialog
         elsif UI.WidgetExists(:contents)
-          Builtins.y2warning("Already in base dialog!")
+          log.warn("Already in base dialog!")
         else
           log.error("Error in packager, closing current dialog!")
           while !UI.WidgetExists(:contents)
@@ -1190,7 +1190,7 @@ module Yast
         )
       ) do |one_repo|
         if one_repo == nil || one_repo == -1
-          Builtins.y2warning("Wrong repo ID: %1", one_repo)
+          log.warn("Wrong repo ID: #{one_repo}")
           next
         end
         source_data = Pkg.SourceGeneralData(one_repo)
@@ -1318,9 +1318,7 @@ module Yast
         counter = Ops.add(counter, 1)
         log.info("Product: #{one_product}, Info: #{repository_info}")
         if repository_info == nil
-          Builtins.y2warning(
-            "No matching repository found for product listed above"
-          )
+          log.warn("No matching repository found for product listed above")
         end
         repository_info = (
           one_product_ref = arg_ref(one_product);
@@ -1364,7 +1362,7 @@ module Yast
         :to   => "map <string, map>"
       )
       if product_infos == nil || product_infos == {}
-        Builtins.y2warning("No add-on products have been found")
+        log.warn("No add-on products have been found")
         return true
       end
 
@@ -1709,7 +1707,7 @@ module Yast
 
         # Abort
         if userret == :abort || userret == :cancel
-          Builtins.y2warning("Aborting...")
+          log.warn("Aborting...")
           ret = :abort
           break
 

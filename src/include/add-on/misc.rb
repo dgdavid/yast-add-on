@@ -57,7 +57,7 @@ module Yast
     end
 
     def ContinueIfInsufficientMemory
-      Builtins.y2warning("Not enough memory!")
+      log.warn("Not enough memory!")
 
       # If already reported, just continue
       if !AddOnProduct.low_memory_already_reported
@@ -81,9 +81,7 @@ module Yast
 
           return false
         else
-          Builtins.y2warning(
-            "User decided to continue with not enough memory...!"
-          )
+          log.warn("User decided to continue with not enough memory...!")
 
           return true
         end
