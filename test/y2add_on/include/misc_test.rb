@@ -18,7 +18,7 @@ describe Yast::AddOnMiscInclude do
     allow(subject).to receive(:_)
   end
 
-  describe "#HasInsufficientMemory" do
+  describe "#insufficient_memory?" do
     let(:memory) { 2058 }
     let(:swap) { 1024 }
     let(:meminfo) do
@@ -37,7 +37,7 @@ describe Yast::AddOnMiscInclude do
       let(:memory) { 384_000 }
 
       it "returns false" do
-        expect(subject.HasInsufficientMemory).to be_falsey
+        expect(subject.insufficient_memory?).to be_falsey
       end
     end
 
@@ -46,7 +46,7 @@ describe Yast::AddOnMiscInclude do
       let(:swap) { 73_000 }
 
       it "returns false" do
-        expect(subject.HasInsufficientMemory).to be_falsey
+        expect(subject.insufficient_memory?).to be_falsey
       end
     end
 
@@ -54,7 +54,7 @@ describe Yast::AddOnMiscInclude do
       let(:memory) { 2048 }
 
       it "returns true" do
-        expect(subject.HasInsufficientMemory).to be_truthy
+        expect(subject.insufficient_memory?).to be_truthy
       end
     end
 
@@ -62,19 +62,19 @@ describe Yast::AddOnMiscInclude do
       let(:memory) { nil }
 
       xit "assume enough memory and returns false" do
-        expect(subject.HasInsufficientMemory).to be_falsey
+        expect(subject.insufficient_memory?).to be_falsey
       end
     end
   end
 
-  describe "#ContinueIfInsufficientMemory" do
+  describe "#continue_without_enough_memory?" do
     context "when low memory already was reported" do
       before do
         allow(Yast::AddOnProduct).to receive(:low_memory_already_reported).and_return(true)
       end
 
       it "returns true" do
-        expect(subject.ContinueIfInsufficientMemory).to be_truthy
+        expect(subject.continue_without_enough_memory?).to be_truthy
       end
     end
 
@@ -86,13 +86,13 @@ describe Yast::AddOnMiscInclude do
       it "asks user if Add-Ons should be skipped" do
         expect(Yast::Popup).to receive(:YesNoHeadline)
 
-        subject.ContinueIfInsufficientMemory
+        subject.continue_without_enough_memory?
       end
 
       xit "sets low memory as reported" do
         # pending "possible bug setting low_memory_already_reported?"
 
-        expect { subject.ContinueIfInsufficientMemory }
+        expect { subject.continue_without_enough_memory? }
           .to change { Yast::AddOnProduct.low_memory_already_reported }
           .from(false)
           .to(true)
@@ -101,13 +101,13 @@ describe Yast::AddOnMiscInclude do
       it "returns true if user decides continue" do
         allow(Yast::Popup).to receive(:YesNoHeadline).and_return(false)
 
-        expect(subject.ContinueIfInsufficientMemory).to be_truthy
+        expect(subject.continue_without_enough_memory?).to be_truthy
       end
 
       it "returns false if user decides to skip Add-Ons" do
         allow(Yast::Popup).to receive(:YesNoHeadline).and_return(true)
 
-        expect(subject.ContinueIfInsufficientMemory).to be_falsey
+        expect(subject.continue_without_enough_memory?).to be_falsey
       end
     end
   end

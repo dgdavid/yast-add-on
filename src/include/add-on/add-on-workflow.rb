@@ -872,7 +872,7 @@ module Yast
     def RunAddOnMainDialog(enable_back, enable_next, enable_abort, back_button, next_button, abort_button, confirm_abort)
       ret = nil
 
-      not_enough_memory = Stage.initial && HasInsufficientMemory()
+      not_enough_memory = Stage.initial && insufficient_memory?
       no_addons = Builtins.size(AddOnProduct.add_on_products) == 0
 
       # bugzilla #239630
@@ -880,7 +880,7 @@ module Yast
       # on machine with less memory
       # Do not report when some add-ons are already in use
       if not_enough_memory && !no_addons
-        if !ContinueIfInsufficientMemory()
+        if !continue_without_enough_memory?
           # next time, it will be skipped too
           Installation.add_on_selected = false
           Installation.productsources_selected = false
