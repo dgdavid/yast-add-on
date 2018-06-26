@@ -53,7 +53,7 @@ module Yast
       addon_opt = Linuxrc.InstallInf("addon")
 
       # the "addon" boot option is present
-      if addon_opt != nil
+      if !addon_opt.nil?
         missing_addons = addon_opt.split(",") - current_addons
 
         # add the add-ons just once, skip adding if all add-ons are
@@ -69,7 +69,10 @@ module Yast
           ret = NetworkSetupForAddons(missing_addons)
           return ret if Builtins.contains([:back, :abort], ret)
 
-          plaindir, download, name, alias_ = false, true, "", ""
+          plaindir = false
+          download = true
+          name = ""
+          alias_ = ""
           missing_addons.each do |url|
             sources_before = Pkg.SourceGetCurrent(false)
             log.info("Sources before adding new one: #{sources_before}")
@@ -126,22 +129,21 @@ module Yast
 
       # is this CD/DVD/HDD installation?
       if Builtins.contains(
-          local_protocols,
-          Builtins.tolower(Linuxrc.InstallInf("InstMode"))
-        )
+        local_protocols,
+        Builtins.tolower(Linuxrc.InstallInf("InstMode"))
+      )
         # is there any remote addon requiring network setup?
         network_needed = false
         Builtins.foreach(addon_urls) do |url|
           # is it a remote protocol?
           if !Builtins.contains(
-              local_protocols,
-              Builtins.tolower(Ops.get_string(URL.Parse(url), "scheme", ""))
-            )
+            local_protocols,
+            Builtins.tolower(Ops.get_string(URL.Parse(url), "scheme", ""))
+          )
             network_needed = true
             raise Break
           end
         end
-
 
         if network_needed
           # check and setup network
