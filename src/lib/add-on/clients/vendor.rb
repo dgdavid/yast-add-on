@@ -109,8 +109,7 @@ module Yast
         log.info("Trying #{@cdpath}")
         @dirlist2 = Convert.to_list(SCR.Read(path(".target.dir"), @cdpath))
 
-        if Ops.less_or_equal(Builtins.size(@dirlist2), 0) ||
-            !Builtins.contains(@dirlist2, "linux")
+        if @dirlist2.empty? || @dirlist2.none?("linux")
           # VENDOR: vendor cd contains wrong data
           return wrong_cd(
             _("Could not find driver data on the CD-ROM.\nAborting now."),
@@ -123,9 +122,7 @@ module Yast
         log.info("Trying #{@cdpath}")
 
         @dirlist2 = Convert.to_list(SCR.Read(path(".target.dir"), @cdpath))
-        if Ops.less_or_equal(Builtins.size(@dirlist2), 0) ||
-            !(Builtins.contains(@dirlist2, "suse") ||
-              Builtins.contains(@dirlist2, "unitedlinux"))
+        if @dirlist2.empty? || @dirlist2.none?(/suse|unitedlinux/)
           # VENDOR: vendor cd contains wrong data
           return wrong_cd(
             _("Could not find driver data on the CD-ROM.\nAborting now."),
